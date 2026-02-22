@@ -1,0 +1,35 @@
+# Environment
+.env
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs (keep folder, ignore contents)
+Logs/*.md
+!Logs/.gitkeep
+
+# Playwright
+playwright-browsers/

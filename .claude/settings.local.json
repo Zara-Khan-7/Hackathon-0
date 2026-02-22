@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(claude:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m src.watchers.gmail_watcher:*)",
+      "Bash(python -m src.watchers.linkedin_watcher:*)",
+      "Bash(python -m src.mcp_email.email_server:*)",
+      "Bash(export PYTHONPATH=\"/c/Users/JUST BUY PC/Desktop/HACKATHON 0/Silver\")",
+      "Bash(python -m src.watchers.facebook_watcher:*)",
+      "Bash(python -m src.watchers.instagram_watcher:*)",
+      "Bash(python -m src.watchers.twitter_watcher:*)",
+      "Bash(python -m src.orchestrator.orchestrator:*)",
+      "Bash(python -m src.audit.auditor:*)",
+      "Bash(ls:*)",
+      "Bash(kill:*)",
+      "Bash(python -m src.mcp_odoo.odoo_server:*)",
+      "Bash(python -m src.mcp_social.social_server)",
+      "Bash(python -m src.mcp_whatsapp.whatsapp_server)",
+      "Bash(python -m src.mcp_payment.payment_server)",
+      "Bash(python -c:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

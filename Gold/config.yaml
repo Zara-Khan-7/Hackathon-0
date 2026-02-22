@@ -1,0 +1,108 @@
+# AI Employee Project — Gold Tier Configuration
+# Watcher, scheduler, orchestrator, and MCP server settings
+
+project_root: "."
+
+folders:
+  inbox: "Inbox"
+  needs_action: "Needs_Action"
+  pending_approval: "Pending_Approval"
+  approved: "Approved"
+  rejected: "Rejected"
+  done: "Done"
+  logs: "Logs"
+  accounting: "Accounting"
+  briefings: "Briefings"
+  errors: "Errors"
+
+watchers:
+  gmail:
+    enabled: true
+    poll_interval: 300       # seconds
+    label: "INBOX"
+    max_per_poll: 10
+  linkedin:
+    enabled: true
+    poll_interval: 3600      # seconds
+    max_per_poll: 5
+  facebook:
+    enabled: true
+    poll_interval: 600       # seconds
+    max_per_poll: 10
+  instagram:
+    enabled: true
+    poll_interval: 600       # seconds
+    max_per_poll: 10
+  twitter:
+    enabled: true
+    poll_interval: 300       # seconds
+    max_per_poll: 15
+
+orchestrator:
+  watch_folder: "Needs_Action"
+  ignore_prefixes: ["Plan_"]
+  poll_interval: 10          # seconds between checks
+  claude_command: "claude"
+  claude_flags: ["-p"]
+  ralph_wiggum:
+    enabled: true
+    max_iterations: 15
+    complex_prefixes: ["ODOO_", "AUDIT_"]
+
+approval:
+  watch_folder: "Pending_Approval"
+  approved_folder: "Approved"
+  rejected_folder: "Rejected"
+  poll_interval: 5           # seconds
+
+scheduler:
+  daily_scan: "09:00"
+  weekly_post:
+    day: "friday"
+    time: "16:00"
+  monday_briefing:
+    time: "08:00"
+  sunday_audit:
+    time: "23:00"
+
+mcp_email:
+  dry_run: true
+  log_to_file: true
+
+mcp_odoo:
+  host: "localhost"
+  port: 8069
+  db: "odoo"
+  dry_run: true
+  mock: true
+
+mcp_social:
+  dry_run: true
+  mock: true
+  platforms:
+    facebook:
+      enabled: true
+    instagram:
+      enabled: true
+    twitter:
+      enabled: true
+
+file_prefixes:
+  email: "EMAIL"
+  linkedin: "LINKEDIN"
+  approval: "APPROVE"
+  execute: "EXECUTE"
+  sales_post: "SALESPOST"
+  schedule: "SCHEDULE"
+  odoo: "ODOO"
+  facebook: "FACEBOOK"
+  instagram: "INSTAGRAM"
+  twitter: "TWITTER"
+  social: "SOCIAL"
+  audit: "AUDIT"
+  error: "ERROR"
+
+error_recovery:
+  max_retries: 3
+  backoff_factor: 2
+  retry_queue_folder: "Errors"

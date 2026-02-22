@@ -1,0 +1,16 @@
+# Merge strategies for hybrid cloud/local sync
+# Needs_Action: accept incoming (theirs) — cloud watchers create, local picks up
+Needs_Action/*.md merge=union
+
+# In_Progress: keep local (ours) — whoever claimed it owns it
+In_Progress/**/*.md merge=ours
+
+# Logs: union merge — both sides contribute
+Logs/*.md merge=union
+Logs/*.jsonl merge=union
+
+# Done: union merge — both sides can complete tasks
+Done/*.md merge=union
+
+# Pending_Approval: union — cloud creates, local approves
+Pending_Approval/*.md merge=union

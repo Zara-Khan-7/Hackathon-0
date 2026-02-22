@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(claude:*)",
+      "Bash(python:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)"
+    ]
+  },
+  "mcpServers": {
+    "ai-employee-email": {
+      "command": "python",
+      "args": ["-m", "src.mcp_email.email_server"],
+      "cwd": "."
+    },
+    "ai-employee-odoo": {
+      "command": "python",
+      "args": ["-m", "src.mcp_odoo.odoo_server"],
+      "cwd": "."
+    },
+    "ai-employee-social": {
+      "command": "python",
+      "args": ["-m", "src.mcp_social.social_server"],
+      "cwd": "."
+    }
+  }
+}

@@ -1,0 +1,57 @@
+# AI Employee Project — Configuration
+# Watcher, scheduler, and orchestrator settings
+
+project_root: "."
+
+folders:
+  inbox: "Inbox"
+  needs_action: "Needs_Action"
+  pending_approval: "Pending_Approval"
+  approved: "Approved"
+  rejected: "Rejected"
+  done: "Done"
+  logs: "Logs"
+
+watchers:
+  gmail:
+    enabled: true
+    poll_interval: 300       # seconds
+    label: "INBOX"
+    max_per_poll: 10
+  linkedin:
+    enabled: true
+    poll_interval: 3600      # seconds
+    max_per_poll: 5
+
+orchestrator:
+  watch_folder: "Needs_Action"
+  ignore_prefixes: ["Plan_"]
+  poll_interval: 10          # seconds between checks
+  claude_command: "claude"
+  claude_flags: ["-p"]
+
+approval:
+  watch_folder: "Pending_Approval"
+  approved_folder: "Approved"
+  rejected_folder: "Rejected"
+  poll_interval: 5           # seconds
+
+scheduler:
+  daily_scan: "09:00"
+  weekly_post:
+    day: "friday"
+    time: "16:00"
+  monday_briefing:
+    time: "08:00"
+
+mcp_email:
+  dry_run: true
+  log_to_file: true
+
+file_prefixes:
+  email: "EMAIL"
+  linkedin: "LINKEDIN"
+  approval: "APPROVE"
+  execute: "EXECUTE"
+  sales_post: "SALESPOST"
+  schedule: "SCHEDULE"

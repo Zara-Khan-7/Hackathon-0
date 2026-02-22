@@ -1,0 +1,62 @@
+# Environment & Secrets
+.env
+.env.local
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs (keep folder, ignore contents)
+Logs/*.md
+Logs/*.jsonl
+!Logs/.gitkeep
+
+# Playwright
+playwright-browsers/
+
+# WhatsApp sessions (LOCAL-ONLY, never sync)
+.whatsapp_session/
+whatsapp_store.json
+
+# Banking data (LOCAL-ONLY, never sync)
+.banking_data/
+payment_store.json
+
+# Seen files (watcher state)
+.gmail_seen.json
+.linkedin_seen.json
+.facebook_seen.json
+.instagram_seen.json
+.twitter_seen.json
+.whatsapp_seen.json
+
+# Heartbeat files
+.heartbeat_*.json
+
+# Ralph Wiggum state
+.ralph_state_*.json
+
+# Pytest cache
+.pytest_cache/

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest cache
+.pytest_cache/
+
+# Playwright
+playwright-browsers/
+
+# Session/state files
+.whatsapp_session/
+.banking_data/
+.heartbeat_*.json
+.ralph_state_*.json
+
+# Credentials (if any real ones exist)
+credentials.json
+token.json
