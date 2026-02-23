@@ -1,185 +1,333 @@
-# AI Employee Project — Gold Tier
+# Gold Tier — Multi-Platform Social + ERP Integration
 
-An autonomous AI-powered employee that monitors Gmail, LinkedIn, Facebook, Instagram, and X/Twitter, manages Odoo ERP invoicing, processes tasks through an approval pipeline, runs weekly business audits, and executes actions via 3 MCP servers. Local-first, dry-run by default.
+**Status:** Implemented | **Tests:** 55 | **Skills:** 16 | **MCP Servers:** 3 | **Watchers:** 5
+
+## What This Tier Does
+
+Gold is the **multi-platform layer** — it extends Silver's email/LinkedIn automation to cover Facebook, Instagram, and Twitter/X, adds Odoo ERP integration for invoicing and accounting, introduces a **Ralph Wiggum multi-step AI loop** for complex tasks, implements error recovery with retry logic, and runs automated weekly business audits that produce CEO briefings.
+
+Think of it as **promoting your AI assistant to office manager** — one that handles all communication channels, manages invoicing, audits the business weekly, and recovers from failures automatically.
 
 ## Architecture
 
 ```
-Gmail/LinkedIn/Facebook/Instagram/X
-         |
-    Watchers (--mock)
-         |
-  Needs_Action/*.md
-         |
-  Orchestrator (+ Ralph Wiggum for complex tasks)
-         |
-  Claude CLI Skills --> Plans
-         |
-  Needs Approval? --Yes--> Pending_Approval/ --> HITL --> Approved/Rejected
-       |                                                    |
-       No                                          EXECUTE_*.md --> Needs_Action/
-       |                                                    |
-  Execute via MCP <-----------------------------------------+
-  (email / odoo / social)
-       |
-  Done/ + Logs/ + Dashboard.md
-       |
-  Weekly Audit (Sunday 11PM) --> Briefings/Monday_Briefing.md
-       |
-  Errors/ (failed tasks) --> retry queue --> ErrorHandler
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                      EXTERNAL SOURCES                            │
+    │   Gmail    LinkedIn    Facebook    Instagram    Twitter/X         │
+    └───┬──────────┬──────────┬──────────┬──────────┬─────────────────┘
+        │          │          │          │          │
+        ▼          ▼          ▼          ▼          ▼
+    ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+    │ Gmail  │ │LinkedIn│ │Facebook│ │ Insta  │ │Twitter │
+    │Watcher │ │Watcher │ │Watcher │ │Watcher │ │Watcher │
+    └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘
+        │          │          │          │          │
+        ▼          ▼          ▼          ▼          ▼
+    ┌──────────────────────────────────────────────────┐
+    │              Needs_Action/                        │
+    │  EMAIL_*.md  LINKEDIN_*.md  FACEBOOK_*.md         │
+    │  INSTAGRAM_*.md  TWITTER_*.md  ODOO_*.md          │
+    │  AUDIT_*.md  SALESPOST_*.md  ERROR_*.md           │
+    └─────────────────────┬────────────────────────────┘
+                          │
+                          ▼
+    ┌─────────────────────────────────────────────────────┐
+    │                  Orchestrator                        │
+    │                                                     │
+    │  Simple tasks ──────────────► Direct processing     │
+    │                                                     │
+    │  Complex tasks (ODOO_, AUDIT_)                      │
+    │       │                                             │
+    │       ▼                                             │
+    │  ┌─────────────────────────────┐                    │
+    │  │  Ralph Wiggum Loop          │                    │
+    │  │  Step 1: Plan               │                    │
+    │  │  Step 2: Execute step       │                    │
+    │  │  Step 3: Check result       │                    │
+    │  │  Step 4: Next step or done  │                    │
+    │  │  (max 5 iterations)         │                    │
+    │  └─────────────────────────────┘                    │
+    └──────────────┬──────────────────┬───────────────────┘
+                   │                  │
+           Needs approval?     No approval needed
+                   │                  │
+                   ▼                  ▼
+    ┌──────────────────┐       ┌──────────┐
+    │ Pending_Approval/│       │  Done/   │
+    │ APPROVE_*.md     │       └──────────┘
+    └────────┬─────────┘
+             │
+             ▼
+    ┌──────────────────────────────────────────┐
+    │          HITL Approval Pipeline           │
+    │  [A]pprove  [R]eject  [M]odify  [S]kip   │
+    └────────┬─────────────────────────────────┘
+             │
+             ▼
+    ┌──────────────────────────────────────────┐
+    │              MCP Servers (3)              │
+    │                                          │
+    │  ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+    │  │  Email   │ │  Odoo    │ │  Social  │ │
+    │  │  Server  │ │  Server  │ │  Server  │ │
+    │  │ send     │ │ invoice  │ │ post_fb  │ │
+    │  │ draft    │ │ partners │ │ post_ig  │ │
+    │  │ list     │ │ txns     │ │ post_tw  │ │
+    │  └──────────┘ └──────────┘ └──────────┘ │
+    └──────────────────┬───────────────────────┘
+                       │
+                       ▼
+    ┌─────────────────────────────────────┐
+    │  Done/ + Logs/ + Dashboard.md       │
+    │  Accounting/ + Briefings/ + Errors/ │
+    └─────────────────────────────────────┘
+                       │
+            ┌──────────┼──────────┐
+            ▼          ▼          ▼
+    ┌────────────┐ ┌────────┐ ┌──────────────┐
+    │Weekly Audit│ │ Error  │ │  Scheduler   │
+    │(Sun 11 PM) │ │Handler │ │(daily/weekly)│
+    │CEO Briefing│ │+ Retry │ │              │
+    └────────────┘ └────────┘ └──────────────┘
 ```
+
+## How the Workflow Works (Step by Step)
+
+### Step 1: Multi-Platform Detection (5 Watchers)
+Five watchers run in parallel, each monitoring a different platform:
+
+| Watcher | What It Monitors | Task File Created |
+|---------|-----------------|-------------------|
+| Gmail | Inbox emails via Gmail API | `EMAIL_20260223_sender.md` |
+| LinkedIn | Messages/invitations via Playwright | `LINKEDIN_20260223_user.md` |
+| Facebook | Page notifications/DMs via Graph API | `FACEBOOK_20260223_post.md` |
+| Instagram | DMs/mentions via Instagrapi | `INSTAGRAM_20260223_user.md` |
+| Twitter/X | Mentions/DMs via Tweepy | `TWITTER_20260223_mention.md` |
+
+Each creates a Markdown file with YAML frontmatter in `Needs_Action/`.
+
+### Step 2: Classification (Orchestrator)
+The orchestrator reads the filename prefix to determine task type and routing:
+
+| Prefix | Type | Routing |
+|--------|------|---------|
+| `EMAIL_` | Email reply | Email MCP |
+| `LINKEDIN_` | LinkedIn response | LinkedIn poster |
+| `FACEBOOK_` | Facebook content | Social MCP |
+| `INSTAGRAM_` | Instagram content | Social MCP |
+| `TWITTER_` | Twitter/X content | Social MCP |
+| `ODOO_` | ERP/invoicing | Odoo MCP (Ralph Wiggum) |
+| `AUDIT_` | Business audit | Audit system (Ralph Wiggum) |
+| `SALESPOST_` | Sales content | LinkedIn poster |
+| `EXECUTE_` | Approved action | Direct MCP call |
+| `ERROR_` | Error recovery | Error handler |
+| `SCHEDULE_` | Recurring task | Scheduler |
+
+### Step 3: Processing (Simple vs. Complex)
+
+**Simple tasks** (EMAIL_, LINKEDIN_, social posts) go through direct processing:
+1. Create plan via `create_plan` skill
+2. Execute via `complete_task` skill
+3. Route to approval or Done/
+
+**Complex tasks** (ODOO_, AUDIT_) use the **Ralph Wiggum multi-step loop**:
+1. AI creates an initial plan with numbered steps
+2. Executes Step 1, checks result
+3. If Step 1 succeeded, executes Step 2, etc.
+4. Up to 5 iterations before forcing completion
+5. Each step can invoke MCP tools (create invoice, read transactions, etc.)
+
+### Step 4: Approval (Same HITL as Silver)
+Any task that involves external actions goes to `Pending_Approval/`:
+- Sending emails → requires approval
+- Posting on social media → requires approval
+- Posting invoices in Odoo → requires approval
+- Creating invoice drafts → does NOT require approval
+
+### Step 5: Execution via 3 MCP Servers
+Approved actions execute through the appropriate MCP server:
+
+**Email MCP** (`src/mcp_email/`):
+- `send_email` — Send email via SMTP (DANGEROUS)
+- `draft_email` — Save email draft (DRAFT)
+- `list_drafts` — List saved drafts (SAFE)
+
+**Odoo MCP** (`src/mcp_odoo/`):
+- `list_invoices` — List all invoices (SAFE)
+- `read_invoice` — Read invoice details (SAFE)
+- `create_invoice_draft` — Create draft invoice (DRAFT)
+- `post_invoice` — Confirm and post invoice (DANGEROUS)
+- `list_partners` — List business partners (SAFE)
+- `read_transactions` — Read accounting transactions (SAFE)
+
+**Social MCP** (`src/mcp_social/`):
+- `post_facebook` — Post to Facebook page (DANGEROUS)
+- `post_instagram` — Post to Instagram (DANGEROUS)
+- `post_twitter` — Post to Twitter/X (DANGEROUS)
+- `get_social_summary` — Get engagement metrics (SAFE)
+- `draft_social_post` — Create social media draft (DRAFT)
+
+### Step 6: Error Recovery
+When a task fails, the ErrorHandler:
+1. Creates an `ERROR_*.md` file in `Errors/`
+2. Checks if the error is retryable (network timeout, API rate limit)
+3. Retries with exponential backoff (1s, 2s, 4s — max 3 retries)
+4. If all retries fail, escalates to human via `Pending_Approval/`
+
+### Step 7: Weekly Audit
+Every Sunday at 11 PM, the scheduler triggers a full business audit:
+1. Gathers stats from Odoo (revenue, invoices, overdue)
+2. Gathers social media metrics (posts, engagement, DMs)
+3. Counts task pipeline stats (done, pending, errors)
+4. Generates a CEO briefing in `Briefings/Monday_Briefing.md`
 
 ## Directory Structure
 
-| Folder | Purpose |
-|--------|---------|
-| `Inbox/` | Raw incoming items for triage |
-| `Needs_Action/` | Watchers create `.md` task files here |
-| `Pending_Approval/` | Items awaiting human review |
-| `Approved/` | Approved actions (archive) |
-| `Rejected/` | Rejected actions (archive) |
-| `Done/` | Completed tasks |
-| `Logs/` | Action logs (markdown + JSON-lines audit trail) |
-| `Accounting/` | Odoo transaction summaries |
-| `Briefings/` | Weekly CEO briefings |
-| `Errors/` | Failed tasks queued for retry |
-| `docker/` | Odoo 17 + PostgreSQL Docker config |
-| `src/` | Python source code |
-| `.claude/skills/` | Agent skill definitions (16 skills) |
+```
+Gold/
+├── src/
+│   ├── watchers/
+│   │   ├── gmail_watcher.py       # Gmail API polling
+│   │   ├── linkedin_watcher.py    # LinkedIn scraping
+│   │   ├── facebook_watcher.py    # Facebook Graph API
+│   │   ├── instagram_watcher.py   # Instagram via Instagrapi
+│   │   └── twitter_watcher.py     # Twitter/X via Tweepy
+│   ├── orchestrator/
+│   │   └── orchestrator.py        # Main loop + Ralph Wiggum
+│   ├── approval/
+│   │   └── approval_watcher.py    # Terminal HITL approval
+│   ├── mcp_email/
+│   │   ├── email_server.py        # Email MCP (3 tools)
+│   │   └── email_client.py        # Subprocess wrapper
+│   ├── mcp_odoo/
+│   │   ├── odoo_server.py         # Odoo MCP (6 tools)
+│   │   ├── odoo_client.py         # Subprocess wrapper
+│   │   └── mock_odoo.py           # Mock invoices/partners/txns
+│   ├── mcp_social/
+│   │   ├── social_server.py       # Social MCP (5 tools)
+│   │   ├── social_client.py       # Subprocess wrapper
+│   │   ├── mock_social.py         # Mock posts/metrics
+│   │   └── adapters/
+│   │       ├── facebook_adapter.py
+│   │       ├── instagram_adapter.py
+│   │       └── twitter_adapter.py
+│   ├── audit/
+│   │   └── auditor.py             # Weekly business audit
+│   ├── errors/
+│   │   └── error_handler.py       # Error recovery + retry
+│   ├── scheduler/
+│   │   └── scheduler.py           # Recurring task scheduler
+│   └── utils/
+│       ├── file_ops.py            # File operations
+│       ├── logger.py              # Audit logging (MD + JSONL)
+│       ├── frontmatter.py         # YAML frontmatter parser
+│       ├── mcp_registry.py        # MCP server registry
+│       └── retry.py               # Retry decorator with backoff
+├── tests/
+│   ├── test_pipeline.py           # Silver pipeline tests
+│   ├── test_odoo_server.py        # Odoo MCP tests
+│   ├── test_social_server.py      # Social MCP tests
+│   ├── test_orchestrator.py       # Orchestrator routing tests
+│   ├── test_error_handler.py      # Error recovery tests
+│   └── test_auditor.py            # Audit system tests
+├── docker/
+│   └── docker-compose.yml         # Odoo 17 + PostgreSQL
+├── .claude/skills/                # 16 agent skills
+├── Inbox/                         # Raw incoming items
+├── Needs_Action/                  # Active task queue
+├── Pending_Approval/              # Awaiting human review
+├── Approved/                      # Approved actions archive
+├── Rejected/                      # Rejected actions archive
+├── Done/                          # Completed tasks
+├── Logs/                          # Audit trail (MD + JSONL)
+├── Accounting/                    # Odoo transaction summaries
+├── Briefings/                     # Weekly CEO briefings
+├── Errors/                        # Failed tasks for retry
+├── Dashboard.md                   # Live status board
+├── Company_Handbook.md            # Workflow rules
+├── config.yaml                    # Configuration
+└── requirements.txt               # Dependencies
+```
+
+## The 16 Skills
+
+| # | Skill | What It Does |
+|---|-------|-------------|
+| 1 | `scan_needs_action` | List and classify all pending tasks with type/priority |
+| 2 | `create_plan` | Generate type-aware action plans (with Odoo/social/audit templates) |
+| 3 | `complete_task` | Execute tasks with multi-MCP routing (email/odoo/social) |
+| 4 | `update_dashboard` | Refresh Dashboard.md with accounting/social/audit/error stats |
+| 5 | `generate_sales_post` | Draft multi-platform sales and promotional posts |
+| 6 | `request_approval` | Create HITL approval requests in Pending_Approval/ |
+| 7 | `execute_action` | Execute approved actions via the correct MCP server |
+| 8 | `schedule_task` | Configure recurring tasks (daily/weekly/monthly) |
+| 9 | `sync_odoo_transactions` | Read Odoo transactions and save to Accounting/ |
+| 10 | `create_invoice_draft` | Create a draft invoice in Odoo ERP |
+| 11 | `post_approved_invoice` | Post an approved invoice (confirms it in Odoo) |
+| 12 | `generate_social_post` | Create platform-specific content (FB/IG/X formatting) |
+| 13 | `post_approved_social` | Post approved content to Facebook/Instagram/Twitter |
+| 14 | `summarize_social_activity` | Fetch engagement metrics and update Dashboard.md |
+| 15 | `weekly_audit` | Run full business audit and generate CEO briefing |
+| 16 | `handle_error` | Detect failures, attempt retry with backoff, or escalate |
+
+## What Gold Adds Over Silver
+
+| Feature | Silver | Gold |
+|---------|--------|------|
+| Watchers | 2 (Gmail, LinkedIn) | 5 (+Facebook, Instagram, Twitter) |
+| MCP Servers | 1 (Email) | 3 (+Odoo ERP, Social Media) |
+| Task Types | 5 prefixes | 13 prefixes |
+| Processing | Linear | Ralph Wiggum multi-step loop |
+| Error Handling | None | ErrorHandler + retry with backoff |
+| Auditing | None | Weekly business audit + CEO briefing |
+| ERP | None | Full Odoo integration (invoicing, partners, transactions) |
+| Social Posting | LinkedIn only | Facebook + Instagram + Twitter/X |
+| Skills | 8 | 16 (+8 new) |
+| Tests | 1 | 55 |
+
+## What the Next Tier (Platinum) Adds
+
+Platinum builds on Gold by adding:
+- **Hybrid cloud/local architecture** — Cloud VM runs 24/7 (drafts only), local machine executes
+- **2 more MCP servers** — WhatsApp + Payment (LOCAL-ONLY)
+- **Claim-by-move** — Atomic task ownership via `os.rename()`
+- **Git vault sync** — Cloud pushes, local pulls, conflict resolution
+- **Health monitoring** — Heartbeat, disk usage, error rate checks
+- **5 more skills** (21 total)
+- **215 passing tests**
 
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your settings (defaults to dry-run + mock)
-
-# 3. Test with mock data (all watchers)
+# Test all watchers with mock data
 python -m src.watchers.gmail_watcher --mock --once
 python -m src.watchers.linkedin_watcher --mock --once
 python -m src.watchers.facebook_watcher --mock --once
 python -m src.watchers.instagram_watcher --mock --once
 python -m src.watchers.twitter_watcher --mock --once
 
-# 4. Run orchestrator (dry-run)
+# Run orchestrator (dry-run)
 python -m src.orchestrator.orchestrator --dry-run --once
 
-# 5. Run approval watcher
+# Run approval watcher
 python -m src.approval.approval_watcher --once
 
-# 6. Run scheduler
-python -m src.scheduler.scheduler --once
-
-# 7. Run weekly audit (mock)
+# Run weekly audit (mock)
 python -m src.audit.auditor --mock
 
-# 8. Run all tests
+# Run all tests (55 tests)
 python -m pytest tests/ -v
-```
-
-## Odoo ERP Setup (Optional)
-
-```bash
-# Requires Docker Desktop installed and running
-cd docker
-docker-compose up -d
-# Odoo web UI at http://localhost:8069 (admin/admin)
-# Set ODOO_MOCK=false in .env to use real Odoo
-```
-
-## Components
-
-### Watchers (`src/watchers/`) — 5 total
-- **gmail_watcher.py** — Polls Gmail API, creates EMAIL_*.md tasks
-- **linkedin_watcher.py** — Playwright-based LinkedIn monitor, creates LINKEDIN_*.md
-- **facebook_watcher.py** — Facebook page notifications/messages, creates FACEBOOK_*.md
-- **instagram_watcher.py** — Instagram DMs/mentions, creates INSTAGRAM_*.md
-- **twitter_watcher.py** — X/Twitter mentions/DMs, creates TWITTER_*.md
-- All support `--mock`, `--dry-run`, and `--once` flags
-
-### Orchestrator (`src/orchestrator/`)
-- Watches `Needs_Action/` for new .md files
-- Classifies by type and priority (13 prefix types)
-- Invokes Claude CLI skills (`claude -p`) for planning and execution
-- Routes approval-required tasks to `Pending_Approval/`
-- **Ralph Wiggum loop** for complex multi-step tasks (ODOO_, AUDIT_)
-- Error recovery with retry decorator + ErrorHandler
-
-### Approval Pipeline (`src/approval/`)
-- Terminal-based HITL (Human-in-the-Loop) review
-- Approve / Reject / Modify / Skip
-- Creates EXECUTE_*.md for approved actions
-
-### MCP Servers — 3 total
-
-| Server | Module | Tools |
-|--------|--------|-------|
-| **ai-employee-email** | `src.mcp_email.email_server` | send_email, draft_email, list_drafts |
-| **ai-employee-odoo** | `src.mcp_odoo.odoo_server` | list_invoices, read_invoice, create_invoice_draft, post_invoice, list_partners, read_transactions |
-| **ai-employee-social** | `src.mcp_social.social_server` | post_facebook, post_instagram, post_twitter, get_social_summary, draft_social_post |
-
-### Audit System (`src/audit/`)
-- Weekly business/accounting audit
-- Gathers stats from Odoo, social media, and task pipeline
-- Generates CEO briefing in Briefings/
-
-### Error Recovery (`src/errors/`)
-- ErrorHandler: catches exceptions, creates ERROR_*.md
-- Retry queue with exponential backoff (1s, 2s, 4s)
-- Escalation to HITL for persistent failures
-
-### Scheduler (`src/scheduler/`)
-- Daily scan (9 AM), weekly post (Friday 4 PM), Monday briefing (8 AM), Sunday audit (11 PM)
-
-## Agent Skills (16)
-
-| # | Skill | Purpose |
-|---|-------|---------|
-| 1 | `scan_needs_action` | List and classify all pending tasks |
-| 2 | `create_plan` | Generate type-aware plans (Odoo/social/audit templates) |
-| 3 | `complete_task` | Execute with multi-MCP routing |
-| 4 | `update_dashboard` | Refresh stats (accounting/social/audit/errors) |
-| 5 | `generate_sales_post` | Draft multi-platform posts |
-| 6 | `request_approval` | Create HITL approval requests |
-| 7 | `execute_action` | Execute approved actions (email/Odoo/social) |
-| 8 | `schedule_task` | Configure recurring tasks |
-| 9 | `sync_odoo_transactions` | Read Odoo transactions → Accounting/ |
-| 10 | `create_invoice_draft` | Create draft invoice → approval |
-| 11 | `post_approved_invoice` | Post approved invoice in Odoo |
-| 12 | `generate_social_post` | Create FB/IG/X content |
-| 13 | `post_approved_social` | Post approved social content |
-| 14 | `summarize_social_activity` | Fetch metrics → Dashboard.md |
-| 15 | `weekly_audit` | Full audit → CEO briefing |
-| 16 | `handle_error` | Detect failures, retry or escalate |
-
-## Testing
-
-```bash
-# Unit tests
-python -m pytest tests/ -v
-
-# MCP server tests (pipe JSON-RPC)
-echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python -m src.mcp_email.email_server
-echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python -m src.mcp_odoo.odoo_server
-echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python -m src.mcp_social.social_server
-
-# Full integration (4 terminals)
-python -m src.orchestrator.orchestrator --dry-run          # Terminal 1
-python -m src.approval.approval_watcher                    # Terminal 2
-python -m src.watchers.gmail_watcher --mock --once         # Terminal 3
-python -m src.watchers.facebook_watcher --mock --once      # Terminal 3
-python -m src.scheduler.scheduler --trigger weekly_audit   # Terminal 4
 ```
 
 ## Modes
 
-| Mode | Description |
-|------|-------------|
-| `DRY_RUN=true` | Log all external actions instead of executing (default) |
-| `MOCK_DATA=true` | Use fake data for watchers (default) |
-| `ODOO_MOCK=true` | Use mock Odoo data, no Docker needed (default) |
-| `*_MOCK=true` | Use mock social data (default for FB/IG/X) |
-| Set all to `false` | Full live operation with real APIs |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DRY_RUN` | `true` | Log all external actions instead of executing |
+| `MOCK_DATA` | `true` | Watchers use fake data instead of real APIs |
+| `ODOO_MOCK` | `true` | Odoo MCP returns mock data (no Docker needed) |
+
+Set all to `false` in `.env` for live operation.

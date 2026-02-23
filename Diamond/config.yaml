@@ -1,0 +1,215 @@
+# AI Employee Project — Diamond Tier Configuration
+# Multi-agent swarm with A2A messaging, self-improving loops, credential vault
+
+project_root: "."
+
+folders:
+  inbox: "Inbox"
+  needs_action: "Needs_Action"
+  pending_approval: "Pending_Approval"
+  approved: "Approved"
+  rejected: "Rejected"
+  done: "Done"
+  logs: "Logs"
+  accounting: "Accounting"
+  briefings: "Briefings"
+  errors: "Errors"
+  in_progress: "In_Progress"
+
+# Diamond: Agent identity and role
+agent:
+  id: "local-001"               # Override via AGENT_ID env var
+  role: "diamond"               # cloud | local | gold | diamond (override via AGENT_ROLE)
+  heartbeat_interval: 30        # seconds between heartbeat writes
+
+# Platinum: Git vault sync
+sync:
+  enabled: false                # Override via GIT_SYNC_ENABLED env var
+  interval: 60                  # seconds between sync cycles
+  remote: "origin"
+  branch: "main"
+  sync_folders:                 # Folders to sync via git
+    - "Needs_Action"
+    - "In_Progress"
+    - "Pending_Approval"
+    - "Done"
+    - "Logs"
+
+watchers:
+  gmail:
+    enabled: true
+    poll_interval: 300
+    label: "INBOX"
+    max_per_poll: 10
+  linkedin:
+    enabled: true
+    poll_interval: 3600
+    max_per_poll: 5
+  facebook:
+    enabled: true
+    poll_interval: 600
+    max_per_poll: 10
+  instagram:
+    enabled: true
+    poll_interval: 600
+    max_per_poll: 10
+  twitter:
+    enabled: true
+    poll_interval: 300
+    max_per_poll: 15
+  whatsapp:
+    enabled: true
+    poll_interval: 300
+    max_per_poll: 10
+    local_only: true            # Never runs on cloud
+
+orchestrator:
+  watch_folder: "Needs_Action"
+  ignore_prefixes: ["Plan_"]
+  poll_interval: 10
+  claude_command: "claude"
+  claude_flags: ["-p"]
+  ralph_wiggum:
+    enabled: true
+    max_iterations: 15
+    complex_prefixes: ["ODOO_", "AUDIT_"]
+
+approval:
+  watch_folder: "Pending_Approval"
+  approved_folder: "Approved"
+  rejected_folder: "Rejected"
+  poll_interval: 5
+
+scheduler:
+  daily_scan: "09:00"
+  weekly_post:
+    day: "friday"
+    time: "16:00"
+  monday_briefing:
+    time: "08:00"
+  sunday_audit:
+    time: "23:00"
+
+mcp_email:
+  dry_run: true
+  log_to_file: true
+
+mcp_odoo:
+  host: "localhost"
+  port: 8069
+  db: "odoo"
+  dry_run: true
+  mock: true
+
+mcp_social:
+  dry_run: true
+  mock: true
+  platforms:
+    facebook:
+      enabled: true
+    instagram:
+      enabled: true
+    twitter:
+      enabled: true
+
+mcp_whatsapp:
+  dry_run: true
+  mock: true
+  local_only: true
+
+mcp_payment:
+  dry_run: true
+  mock: true
+  local_only: true
+
+file_prefixes:
+  email: "EMAIL"
+  linkedin: "LINKEDIN"
+  approval: "APPROVE"
+  execute: "EXECUTE"
+  sales_post: "SALESPOST"
+  schedule: "SCHEDULE"
+  odoo: "ODOO"
+  facebook: "FACEBOOK"
+  instagram: "INSTAGRAM"
+  twitter: "TWITTER"
+  social: "SOCIAL"
+  audit: "AUDIT"
+  error: "ERROR"
+  whatsapp: "WHATSAPP"
+  payment: "PAYMENT"
+
+error_recovery:
+  max_retries: 3
+  backoff_factor: 2
+  retry_queue_folder: "Errors"
+
+# Platinum: Health monitoring
+health:
+  heartbeat_interval: 30
+  stale_threshold: 120          # seconds before heartbeat is stale
+  disk_warn_percent: 90
+  error_rate_threshold: 5       # errors per hour before alert
+
+# Diamond: Multi-agent swarm
+swarm:
+  enabled: true
+  max_agents: 4
+  agents:
+    - id: "sales-agent"
+      type: "sales"
+      enabled: true
+    - id: "finance-agent"
+      type: "finance"
+      enabled: true
+    - id: "content-agent"
+      type: "content"
+      enabled: true
+    - id: "security-agent"
+      type: "security"
+      enabled: true
+
+# Diamond: A2A messaging
+a2a:
+  backend: "memory"             # memory (mock) | redis | rabbitmq
+  max_queue_size: 1000
+  message_ttl: 3600             # seconds before messages expire
+
+# Diamond: Self-improving loop
+learning:
+  enabled: true
+  outcome_log: "Logs/outcomes.jsonl"
+  optimization_interval: 100    # optimize after N completed tasks
+  min_sample_size: 10           # minimum outcomes before optimizing
+
+# Diamond: Credential vault
+vault:
+  enabled: true
+  backend: "mock"               # mock | encrypted_file
+  vault_path: ".vault/credentials.enc"
+  key_env: "VAULT_KEY"          # env var for encryption key
+
+# Diamond: CRM integration
+crm:
+  enabled: true
+  backend: "mock"               # mock | salesforce | hubspot
+  sync_interval: 300
+
+# Diamond: REST API
+api:
+  enabled: true
+  host: "127.0.0.1"
+  port: 8080
+  mock: true
+
+# Diamond: Compliance
+compliance:
+  enabled: true
+  report_folder: "Briefings"
+  audit_retention_days: 90
+
+# Diamond: Scaling
+scaling:
+  enabled: false
+  backend: "mock"               # mock | aws | gcp | azure
+  max_instances: 3
